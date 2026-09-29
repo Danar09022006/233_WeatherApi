@@ -1,26 +1,99 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Geolocation App</title>
+    <title>Atlas Lokal</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h3>Nama : Mihael Dwi Prasetyo</h3>
-    <h3>NIM : 312210001</h3>
+    <main>
+      <p class="eyebrow">Atlas Lokal / Geocoding</p>
+      <h1>Temukan titik di peta.</h1>
+      <p class="intro">
+        Masukkan nama kota, kecamatan, atau alamat. Data wilayah dan koordinatnya akan dirangkum di
+        sini.
+      </p>
 
-    <p>kota : <span id="lokasi"></span><br /></p>
+      <form id="form-lokasi" class="search-panel">
+        <label for="input-lokasi">Lokasi yang ingin dicari</label>
+        <input
+          id="input-lokasi"
+          name="lokasi"
+          value="Bandung City"
+          placeholder="Contoh: Bandung City"
+          required
+        />
+        <button type="submit">Cari lokasi</button>
+      </form>
 
-    <p>Koordinat : <span id="negara"></span></p>
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <section class="result" aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <p>HASIL PENELUSURAN</p>
+            <h2 id="lokasi">Menunggu lokasi...</h2>
+          </div>
+          <div class="coordinates">
+            <div>LONG <span id="longitude">-</span></div>
+            <div>LAT <span id="latitude">-</span></div>
+          </div>
+        </div>
+        <div class="details">
+          <div class="detail"><span>Negara</span><strong id="negara">-</strong></div>
+          <div class="detail"><span>Provinsi</span><strong id="provinsi">-</strong></div>
+          <div class="detail"><span>Kecamatan</span><strong id="kecamatan">-</strong></div>
+        </div>
+      </section>
+
+      <footer>Nama: Danar Rohman Rozaqi · NIM: 20240140233</footer>
+    </main>
 
     <script>
-      fetch("/api/lokasi")
-        .then((response) => response.json())
+      const formLokasi = document.getElementById("form-lokasi");
+      const inputLokasi = document.getElementById("input-lokasi");
+      const status = document.getElementById("status");
+
+      function cariLokasi(lokasi) {
+        return fetch(`/api/lokasi?lokasi=${encodeURIComponent(lokasi)}`)
+          .then((response) => response.json().then((data) => ({ response, data })))
+          .then(({ response, data }) => {
+            if (!response.ok) {
+              throw new Error(data.message || "Lokasi tidak ditemukan");
+            }
+
+            return data;
+          });
+      }
+
+      function tampilkanLokasi(data) {
+        document.getElementById("lokasi").textContent = data.kota;
+        document.getElementById("negara").textContent = data.negara;
+        document.getElementById("provinsi").textContent = data.provinsi;
+        document.getElementById("kecamatan").textContent = data.kecamatan;
+        document.getElementById("longitude").textContent = data.longitude;
+        document.getElementById("latitude").textContent = data.latitude;
+        status.textContent = "Lokasi berhasil ditemukan.";
+      }
+
+      formLokasi.addEventListener("submit", (event) => {
+        event.preventDefault();
+        cariLokasi(inputLokasi.value.trim())
+          .then((data) => {
+            console.log(data);
+            tampilkanLokasi(data);
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+            status.textContent = error.message;
+          });
+      });
+
+      cariLokasi(inputLokasi.value)
         .then((data) => {
           console.log(data);
-
-          document.getElementById("lokasi").innerHTML = data.kota;
-          document.getElementById("negara").innerHTML = data.koordinat;
+          tampilkanLokasi(data);
         })
         .catch((error) => {
           console.error("Error fetching data:", error);
